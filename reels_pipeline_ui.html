@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DROP.GEN — by Tunevolt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;900&family=Familjen+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080808; --bg2:#0f0f0f; --surface:#111111; --surface2:#181818;
+  --border:#1e1e1e; --border2:#2a2a2a;
+  --red:#e02020; --red2:#ff3a3a; --red-dim:rgba(224,32,32,0.10); --red-glow:rgba(224,32,32,0.22);
+  --text:#f2f2f2; --muted:#4a4a4a; --muted2:#777; --success:#2ecc71;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: radial-gradient(ellipse at top left, #1c0404 0%, #080808 55%);
+  background-attachment:fixed; color:var(--text);
+  font-family:'Familjen Grotesk',sans-serif; min-height:100vh; overflow-x:hidden;
+}
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px);
+}
+.container { max-width:1020px; margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+
+/* TOPBAR LANGUE */
+.topbar {
+  display:flex; justify-content:flex-end; align-items:center;
+  padding:8px 0; border-bottom:1px solid var(--border); gap:6px;
+}
+.ui-lang-btn {
+  background:transparent; border:1px solid var(--border2); color:var(--muted2);
+  font-family:'Archivo',sans-serif; font-size:10px; font-weight:700;
+  letter-spacing:1.5px; padding:5px 12px; cursor:pointer; border-radius:2px;
+  transition:all 0.15s; text-transform:uppercase;
+}
+.ui-lang-btn.active { background:var(--red-dim); border-color:var(--red); color:var(--red2); }
+.ui-lang-label { font-family:'Archivo',sans-serif; font-size:9px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-right:4px; }
+
+/* HEADER */
+header { display:flex; align-items:center; justify-content:space-between; padding:18px 0; border-bottom:1px solid var(--border); }
+.header-left { display:flex; align-items:center; gap:16px; }
+.logo-mark { width:36px; height:36px; background:var(--red); flex-shrink:0; clip-path:polygon(20% 0%,80% 0%,60% 45%,85% 45%,20% 100%,40% 55%,15% 55%); }
+.brand { display:flex; flex-direction:column; }
+.brand-name { font-family:'Archivo',sans-serif; font-weight:900; font-size:17px; letter-spacing:1px; line-height:1; }
+.brand-name .tune { color:var(--text); } .brand-name .volt { color:var(--red); }
+.brand-sub { font-size:9px; color:var(--muted2); letter-spacing:2.5px; text-transform:uppercase; margin-top:2px; }
+.header-sep { width:1px; height:28px; background:var(--border2); }
+.tool-label { display:flex; flex-direction:column; }
+.tool-name { font-family:'Archivo',sans-serif; font-weight:900; font-size:20px; letter-spacing:4px; color:var(--text); line-height:1; }
+.tool-name em { color:var(--red); font-style:normal; }
+.tool-sub { font-size:9px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-top:3px; }
+.status-pill { display:flex; align-items:center; gap:7px; font-size:10px; color:var(--muted2); letter-spacing:1px; text-transform:uppercase; border:1px solid var(--border2); padding:6px 13px; border-radius:2px; }
+.sdot { width:5px; height:5px; border-radius:50%; background:var(--success); box-shadow:0 0 5px var(--success); animation:pulse 2.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* GRID */
+.main-grid { display:grid; grid-template-columns:1fr 350px; gap:18px; padding:22px 0; }
+
+/* PANEL */
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:2px; }
+.panel-header { padding:11px 18px; border-bottom:1px solid var(--border); font-family:'Archivo',sans-serif; font-size:9px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted2); display:flex; align-items:center; gap:9px; }
+.ph-bar { width:3px; height:13px; background:var(--red); border-radius:1px; flex-shrink:0; }
+
+/* DROP ZONE */
+.drop-zone { margin:18px; border:1px dashed var(--border2); border-radius:2px; padding:38px 20px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden; background:var(--bg2); }
+.drop-zone:hover,.drop-zone.dragover { border-color:var(--red); box-shadow:inset 0 0 40px rgba(224,32,32,0.04); }
+.drop-icon { font-size:34px; margin-bottom:12px; display:block; opacity:0.45; }
+.drop-title { font-family:'Archivo',sans-serif; font-weight:700; font-size:15px; letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
+.drop-sub { font-size:11px; color:var(--muted2); }
+.file-input { display:none; }
+.file-selected { margin:0 18px 16px; background:var(--surface2); border:1px solid var(--border2); padding:11px 15px; display:none; align-items:center; gap:11px; border-radius:2px; }
+.file-selected.show { display:flex; }
+.file-icon { width:32px; height:32px; background:var(--red-dim); border:1px solid rgba(224,32,32,0.25); display:flex; align-items:center; justify-content:center; font-size:14px; border-radius:2px; flex-shrink:0; }
+.file-info { flex:1; min-width:0; }
+.file-name { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.file-meta { font-size:10px; color:var(--muted2); margin-top:2px; }
+
+/* FORM */
+.form-section { padding:0 18px 16px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-bottom:11px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group.full { grid-column:1/-1; }
+label { font-family:'Archivo',sans-serif; font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--muted2); }
+input[type="text"],select,textarea { background:var(--bg2); border:1px solid var(--border2); color:var(--text); font-family:'Familjen Grotesk',sans-serif; font-size:13px; padding:9px 12px; border-radius:2px; outline:none; transition:border-color 0.15s,box-shadow 0.15s; width:100%; }
+input[type="text"]:focus,select:focus,textarea:focus { border-color:var(--red); box-shadow:0 0 0 2px var(--red-dim); }
+select option { background:#111; }
+textarea { resize:vertical; min-height:60px; }
+
+/* HOOK LANG TOGGLE */
+.lang-toggle { display:flex; border:1px solid var(--border2); border-radius:2px; overflow:hidden; }
+.lang-btn { flex:1; background:var(--bg2); border:none; color:var(--muted2); font-family:'Archivo',sans-serif; font-size:11px; font-weight:700; letter-spacing:2px; padding:9px; cursor:pointer; transition:all 0.15s; text-transform:uppercase; border-right:1px solid var(--border2); }
+.lang-btn:last-child { border-right:none; }
+.lang-btn.active { background:var(--red-dim); color:var(--red2); border-color:var(--red); }
+
+/* STYLE HOOKS */
+.style-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.style-btn { border:1px solid var(--border2); background:var(--bg2); color:var(--muted2); font-family:'Archivo',sans-serif; font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; padding:8px 5px; cursor:pointer; border-radius:2px; transition:all 0.15s; text-align:center; }
+.style-btn:hover { border-color:var(--red); color:var(--text); }
+.style-btn.active { border-color:var(--red); background:var(--red-dim); color:var(--red2); }
+
+/* THRESHOLD */
+.threshold-row { display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+.thr-label { font-family:'Archivo',sans-serif; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+input[type="range"] { flex:1; -webkit-appearance:none; height:2px; background:var(--border2); outline:none; border-radius:1px; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; background:var(--red); border-radius:50%; cursor:pointer; box-shadow:0 0 5px var(--red-glow); }
+.thr-val { font-size:11px; color:var(--red); min-width:32px; text-align:right; font-family:'Archivo',sans-serif; font-weight:700; }
+
+/* HASHTAGS */
+.hashtag-generated { min-height:44px; background:var(--bg2); border:1px solid var(--border2); border-radius:2px; padding:8px 12px; font-size:12px; color:var(--muted2); line-height:1.8; word-break:break-all; }
+.hashtag-generated .tag { color:var(--red2); margin-right:3px; }
+.btn-gen-tags { margin-top:7px; width:100%; background:transparent; border:1px solid var(--border2); color:var(--muted2); font-family:'Archivo',sans-serif; font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:8px; cursor:pointer; border-radius:2px; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:7px; }
+.btn-gen-tags:hover { border-color:var(--red); color:var(--red2); }
+
+/* CTA */
+.btn-generate { width:calc(100% - 36px); margin:0 18px 18px; background:var(--red); color:#fff; border:none; font-family:'Archivo',sans-serif; font-weight:900; font-size:14px; letter-spacing:4px; text-transform:uppercase; padding:15px; cursor:pointer; border-radius:2px; transition:all 0.15s; position:relative; overflow:hidden; }
+.btn-generate:hover { background:var(--red2); box-shadow:0 4px 20px var(--red-glow); }
+.btn-generate:active { transform:scale(0.99); }
+.btn-generate:disabled { opacity:0.3; cursor:not-allowed; }
+@keyframes scanline { 0%{top:-2px} 100%{top:100%} }
+.btn-generate.processing::after { content:''; position:absolute; left:0; width:100%; height:2px; background:rgba(255,255,255,0.15); animation:scanline 1s linear infinite; }
+
+/* RIGHT */
+.right-col { display:flex; flex-direction:column; gap:18px; }
+.progress-list { padding:13px 17px; }
+.progress-step { display:flex; align-items:center; gap:11px; padding:8px 0; border-bottom:1px solid var(--border); opacity:0.25; transition:opacity 0.3s; }
+.progress-step:last-child { border-bottom:none; }
+.progress-step.active { opacity:1; } .progress-step.done { opacity:0.55; }
+.step-num { width:20px; height:20px; border:1px solid var(--border2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--muted2); flex-shrink:0; transition:all 0.3s; font-family:'Archivo',sans-serif; font-weight:700; }
+.progress-step.active .step-num { border-color:var(--red); color:var(--red); box-shadow:0 0 8px var(--red-dim); }
+.progress-step.done .step-num { background:var(--success); border-color:var(--success); color:#000; }
+.step-info { flex:1; }
+.step-label { font-size:12px; font-weight:600; }
+.step-detail { font-size:10px; color:var(--muted2); margin-top:1px; }
+.progress-bar-wrap { margin:0 17px 14px; height:2px; background:var(--border); border-radius:1px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:var(--red); width:0%; transition:width 0.5s ease; box-shadow:0 0 6px var(--red); }
+
+/* RESULTS */
+.results-list { padding:10px 14px; max-height:360px; overflow-y:auto; }
+.results-list::-webkit-scrollbar { width:2px; }
+.results-list::-webkit-scrollbar-thumb { background:var(--border2); }
+.result-item { background:var(--surface2); border:1px solid var(--border2); border-left:2px solid var(--red); border-radius:2px; padding:11px 13px; margin-bottom:7px; animation:fadeUp 0.3s ease forwards; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+.result-drop { font-family:'Archivo',sans-serif; font-weight:900; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--red2); margin-bottom:4px; }
+.result-timecode { font-size:10px; color:var(--muted2); margin-bottom:7px; }
+.hook-list { display:flex; flex-direction:column; gap:3px; margin-bottom:9px; }
+.hook-item { font-size:11px; color:var(--text); padding:4px 8px; background:rgba(255,255,255,0.02); border-left:2px solid var(--border2); border-radius:0 2px 2px 0; }
+.hook-style { color:var(--muted2); font-size:9px; letter-spacing:1px; text-transform:uppercase; margin-right:6px; font-family:'Archivo',sans-serif; font-weight:700; }
+.btn-download { display:inline-flex; align-items:center; gap:5px; background:var(--red); color:#fff; border:none; font-family:'Archivo',sans-serif; font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:6px 12px; cursor:pointer; border-radius:2px; text-decoration:none; transition:background 0.15s; }
+.btn-download:hover { background:var(--red2); }
+.btn-download-all { display:block; width:calc(100% - 28px); margin:0 14px 12px; background:transparent; color:var(--red); border:1px solid var(--red); font-family:'Archivo',sans-serif; font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:9px; cursor:pointer; border-radius:2px; transition:all 0.15s; }
+.btn-download-all:hover { background:var(--red-dim); }
+.empty-state { padding:30px 18px; text-align:center; color:var(--muted); font-size:11px; }
+.empty-icon { font-size:26px; margin-bottom:9px; opacity:0.3; }
+.log-body { padding:10px 14px; font-size:10px; color:var(--muted2); height:88px; overflow-y:auto; line-height:1.9; }
+.log-body::-webkit-scrollbar { width:2px; }
+.log-body::-webkit-scrollbar-thumb { background:var(--border2); }
+.log-line { display:flex; gap:9px; }
+.log-time { color:#333; flex-shrink:0; font-family:'Archivo',sans-serif; }
+.log-msg.ok { color:var(--success); } .log-msg.warn { color:#f0a500; } .log-msg.err { color:var(--red2); }
+.footer-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:2px; overflow:hidden; margin-bottom:0; }
+.stat-cell { background:var(--surface); padding:13px 18px; text-align:center; }
+.stat-val { font-family:'Archivo',sans-serif; font-weight:900; font-size:26px; color:var(--red); line-height:1; }
+.stat-lbl { font-size:9px; color:var(--muted2); letter-spacing:2px; text-transform:uppercase; margin-top:3px; font-family:'Archivo',sans-serif; font-weight:700; }
+.footer-bar { border-top:1px solid var(--border); padding:14px 0; display:flex; align-items:center; justify-content:space-between; margin-bottom:0; }
+.footer-brand { display:flex; align-items:center; gap:8px; }
+.footer-brand-name { font-family:'Archivo',sans-serif; font-weight:900; font-size:13px; }
+.footer-brand-name .tune { color:var(--muted2); } .footer-brand-name .volt { color:var(--red); }
+.footer-copy { font-size:10px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOPBAR LANGUE UI -->
+  <div class="topbar">
+    <span class="ui-lang-label" data-i18n="ui_lang">Interface :</span>
+    <button class="ui-lang-btn active" onclick="setUILang('FR',this)">🇫🇷 FR</button>
+    <button class="ui-lang-btn" onclick="setUILang('EN',this)">🇬🇧 EN</button>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <div class="logo-mark"></div>
+      <div class="brand">
+        <div class="brand-name"><span class="tune">TUNE</span><span class="volt">VOLT</span></div>
+        <div class="brand-sub" data-i18n="agency">Music Agency</div>
+      </div>
+      <div class="header-sep"></div>
+      <div class="tool-label">
+        <div class="tool-name">DROP<em>.</em>GEN</div>
+        <div class="tool-sub" data-i18n="tool_sub">Techno Reels Automation</div>
+      </div>
+    </div>
+    <div class="status-pill">
+      <span class="sdot"></span>
+      <span data-i18n="status_active">Système actif</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- LEFT -->
+    <div>
+      <div class="panel">
+        <div class="panel-header"><span class="ph-bar"></span><span data-i18n="source_video">Source vidéo</span></div>
+
+        <div class="drop-zone" id="dropZone">
+          <span class="drop-icon">📼</span>
+          <div class="drop-title" data-i18n="drop_title">Déposer le set ici</div>
+          <div class="drop-sub" data-i18n="drop_sub">MP4 · MOV · MKV — jusqu'à 10 Go</div>
+          <input type="file" class="file-input" id="fileInput" accept="video/*">
+        </div>
+
+        <div class="file-selected" id="fileSelected">
+          <div class="file-icon">▶</div>
+          <div class="file-info">
+            <div class="file-name" id="fileName">—</div>
+            <div class="file-meta" id="fileMeta">—</div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-group">
+              <label data-i18n="label_artist">Nom de l'artiste</label>
+              <input type="text" id="artistName" data-i18n-ph="ph_artist" placeholder="ex: DJ Hypnos">
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_style">Style musical</label>
+              <select id="musicStyle">
+                <option value="hard_techno">Hard Techno</option>
+                <option value="techno">Techno</option>
+                <option value="industrial">Industrial</option>
+                <option value="hard_industrial">Hard Industrial</option>
+                <option value="rawstyle">Rawstyle</option>
+                <option value="bounce">Bounce</option>
+                <option value="hard_bounce">Hard Bounce</option>
+                <option value="hard_groove">Hard Groove</option>
+                <option value="groove">Groove</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group full" style="margin-bottom:11px">
+            <label data-i18n="label_desc">Description de l'artiste</label>
+            <textarea id="artistDesc" data-i18n-ph="ph_desc" placeholder="Ex: DJ berlinois connu pour ses sets durs et hypnotiques..."></textarea>
+          </div>
+
+          <div class="form-group full" style="margin-bottom:11px">
+            <label data-i18n="label_hook_lang">Langue des hooks</label>
+            <div class="lang-toggle">
+              <button class="lang-btn active" data-lang="FR" onclick="setHookLang('FR',this)">🇫🇷 Français</button>
+              <button class="lang-btn" data-lang="EN" onclick="setHookLang('EN',this)">🇬🇧 English</button>
+            </div>
+          </div>
+
+          <div class="form-group full" style="margin-bottom:11px">
+            <label data-i18n="label_hook_style">Styles de hooks</label>
+            <div class="style-grid">
+              <button class="style-btn active" data-style="hype">🔥 Hype</button>
+              <button class="style-btn active" data-style="mystere" data-i18n-btn="btn_mystere">👁 Mystérieux</button>
+              <button class="style-btn active" data-style="minimal">▪ Minimal</button>
+              <button class="style-btn" data-style="question">❓ Question</button>
+              <button class="style-btn" data-style="storytelling">📖 Story</button>
+              <button class="style-btn" data-style="provoc">⚡ Provoc</button>
+            </div>
+          </div>
+
+          <div class="form-group full" style="margin-bottom:11px">
+            <label data-i18n="label_sensitivity">Sensibilité détection drops</label>
+            <div class="threshold-row">
+              <span class="thr-label" data-i18n="thr_low">Conservateur</span>
+              <input type="range" id="threshold" min="1" max="10" value="6" oninput="updateThreshold(this.value)">
+              <span class="thr-val" id="thresholdVal">6/10</span>
+              <span class="thr-label" data-i18n="thr_high">Agressif</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label data-i18n="label_before">Secondes avant le drop</label>
+              <input type="text" id="secBefore" value="5">
+            </div>
+            <div class="form-group">
+              <label data-i18n="label_after">Secondes après le drop</label>
+              <input type="text" id="secAfter" value="20">
+            </div>
+          </div>
+
+          <div class="form-group full" style="margin-bottom:0">
+            <label data-i18n="label_hashtags">Hashtags générés</label>
+            <div class="hashtag-generated" id="hashtagOutput">
+              <span style="color:var(--muted)" data-i18n="hashtag_placeholder">Clique sur "Générer" pour créer des hashtags optimisés →</span>
+            </div>
+            <button class="btn-gen-tags" id="btnGenTags" onclick="generateHashtags()">
+              <span>⚡</span> <span data-i18n="btn_gen_tags">GÉNÉRER LES HASHTAGS VIA IA</span>
+            </button>
+          </div>
+        </div>
+
+        <button class="btn-generate" id="generateBtn" onclick="startGeneration()" data-i18n="btn_launch">
+          ▶ LANCER L'ANALYSE
+        </button>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-col">
+      <div class="panel">
+        <div class="panel-header"><span class="ph-bar"></span><span data-i18n="pipeline">Pipeline</span></div>
+        <div class="progress-list">
+          <div class="progress-step" id="step1">
+            <div class="step-num">1</div>
+            <div class="step-info"><div class="step-label" data-i18n="step1">Extraction audio</div><div class="step-detail" id="step1d" data-i18n="waiting">En attente</div></div>
+          </div>
+          <div class="progress-step" id="step2">
+            <div class="step-num">2</div>
+            <div class="step-info"><div class="step-label" data-i18n="step2">Détection des drops</div><div class="step-detail" id="step2d" data-i18n="waiting">En attente</div></div>
+          </div>
+          <div class="progress-step" id="step3">
+            <div class="step-num">3</div>
+            <div class="step-info"><div class="step-label" data-i18n="step3">Découpage vidéo</div><div class="step-detail" id="step3d" data-i18n="waiting">En attente</div></div>
+          </div>
+          <div class="progress-step" id="step4">
+            <div class="step-num">4</div>
+            <div class="step-info"><div class="step-label" data-i18n="step4">Génération hooks IA</div><div class="step-detail" id="step4d" data-i18n="waiting">En attente</div></div>
+          </div>
+          <div class="progress-step" id="step5">
+            <div class="step-num">5</div>
+            <div class="step-info"><div class="step-label" data-i18n="step5">Export final</div><div class="step-detail" id="step5d" data-i18n="waiting">En attente</div></div>
+          </div>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar"></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><span class="ph-bar"></span><span data-i18n="reels_generated">Reels générés</span></div>
+        <div class="results-list" id="resultsList">
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <span data-i18n="empty_results">Lance une analyse pour voir les résultats</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><span class="ph-bar"></span><span data-i18n="system_logs">Logs système</span></div>
+        <div class="log-body" id="logBody">
+          <div class="log-line"><span class="log-time">00:00:00</span><span class="log-msg" data-i18n="log_init">Système initialisé. En attente de fichier.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="footer-stats">
+    <div class="stat-cell"><div class="stat-val" id="statDrops">0</div><div class="stat-lbl" data-i18n="stat_drops">Drops détectés</div></div>
+    <div class="stat-cell"><div class="stat-val" id="statReels">0</div><div class="stat-lbl" data-i18n="stat_reels">Reels créés</div></div>
+    <div class="stat-cell"><div class="stat-val" id="statHooks">0</div><div class="stat-lbl" data-i18n="stat_hooks">Hooks générés</div></div>
+  </div>
+
+  <div class="footer-bar">
+    <div class="footer-brand">
+      <div class="logo-mark" style="width:18px;height:18px;"></div>
+      <div class="footer-brand-name"><span class="tune">TUNE</span><span class="volt">VOLT</span></div>
+    </div>
+    <div class="footer-copy" data-i18n="footer_copy">DROP.GEN © 2026 — Outil interne Tunevolt Music</div>
+  </div>
+
+</div>
+<script>
+// ═══════════════════════════════════════════
+// TRADUCTIONS
+// ═══════════════════════════════════════════
+const i18n = {
+  FR: {
+    ui_lang:"Interface :", agency:"Music Agency", tool_sub:"Automatisation Reels Techno",
+    status_active:"Système actif", source_video:"Source vidéo",
+    drop_title:"Déposer le set ici", drop_sub:"MP4 · MOV · MKV — jusqu'à 10 Go",
+    label_artist:"Nom de l'artiste", ph_artist:"ex: DJ Hypnos",
+    label_style:"Style musical", label_desc:"Description de l'artiste",
+    ph_desc:"Ex: DJ berlinois connu pour ses sets durs et hypnotiques...",
+    label_hook_lang:"Langue des hooks", label_hook_style:"Styles de hooks",
+    btn_mystere:"👁 Mystérieux",
+    label_sensitivity:"Sensibilité détection drops", thr_low:"Conservateur", thr_high:"Agressif",
+    label_before:"Secondes avant le drop", label_after:"Secondes après le drop",
+    label_hashtags:"Hashtags générés",
+    hashtag_placeholder:'Clique sur "Générer" pour créer des hashtags optimisés →',
+    btn_gen_tags:"GÉNÉRER LES HASHTAGS VIA IA",
+    btn_launch:"▶ LANCER L'ANALYSE",
+    pipeline:"Pipeline",
+    step1:"Extraction audio", step2:"Détection des drops", step3:"Découpage vidéo",
+    step4:"Génération hooks IA", step5:"Export final", waiting:"En attente",
+    reels_generated:"Reels générés", system_logs:"Logs système",
+    empty_results:"Lance une analyse pour voir les résultats",
+    log_init:"Système initialisé. En attente de fichier.",
+    stat_drops:"Drops détectés", stat_reels:"Reels créés", stat_hooks:"Hooks générés",
+    footer_copy:"DROP.GEN © 2026 — Outil interne Tunevolt Music",
+    btn_download:"⬇ TÉLÉCHARGER", btn_download_all:"⬇ TOUT TÉLÉCHARGER (ZIP)",
+    log_file_loaded:"Fichier chargé", log_no_style:"Sélectionne au moins un style de hook.",
+    log_audio:"Extraction audio (FFmpeg)...", log_audio_ok:"Piste audio extraite.",
+    log_detect:"Analyse Librosa — drops potentiels...", log_detect_ok:"drops trouvés.",
+    log_cut:"Découpage clips 9:16 (FFmpeg)...", log_cut_ok:"clips découpés.",
+    log_hooks:"Génération hooks (Claude API)...", log_hooks_ok:"hooks générés",
+    log_export:"Export & organisation des fichiers...", log_done:"Reels prêts à uploader.",
+    step_detail_audio:"Audio extrait", step_detail_drops:"drops détectés",
+    step_detail_clips:"clips créés", step_detail_hooks:"hooks générés", step_detail_export:"Export complet",
+    btn_finished:"✓ TERMINÉ — RELANCER",
+    log_hashtags_ok:"hashtags générés pour", log_hashtags_err:"Erreur génération hashtags.",
+    btn_regen_tags:"RÉGÉNÉRER LES HASHTAGS", hashtag_loading:"Génération des hashtags...",
+  },
+  EN: {
+    ui_lang:"Interface:", agency:"Music Agency", tool_sub:"Techno Reels Automation",
+    status_active:"System active", source_video:"Video source",
+    drop_title:"Drop your set here", drop_sub:"MP4 · MOV · MKV — up to 10 GB",
+    label_artist:"Artist name", ph_artist:"e.g. DJ Hypnos",
+    label_style:"Music style", label_desc:"Artist description",
+    ph_desc:"e.g. Berlin-based DJ known for hard and hypnotic sets...",
+    label_hook_lang:"Hook language", label_hook_style:"Hook styles",
+    btn_mystere:"👁 Mysterious",
+    label_sensitivity:"Drop detection sensitivity", thr_low:"Conservative", thr_high:"Aggressive",
+    label_before:"Seconds before drop", label_after:"Seconds after drop",
+    label_hashtags:"Generated hashtags",
+    hashtag_placeholder:'Click "Generate" to create optimised hashtags →',
+    btn_gen_tags:"GENERATE HASHTAGS VIA AI",
+    btn_launch:"▶ LAUNCH ANALYSIS",
+    pipeline:"Pipeline",
+    step1:"Audio extraction", step2:"Drop detection", step3:"Video cutting",
+    step4:"AI hook generation", step5:"Final export", waiting:"Waiting",
+    reels_generated:"Generated Reels", system_logs:"System logs",
+    empty_results:"Launch an analysis to see results",
+    log_init:"System initialised. Waiting for file.",
+    stat_drops:"Drops detected", stat_reels:"Reels created", stat_hooks:"Hooks generated",
+    footer_copy:"DROP.GEN © 2026 — Tunevolt Music internal tool",
+    btn_download:"⬇ DOWNLOAD", btn_download_all:"⬇ DOWNLOAD ALL (ZIP)",
+    log_file_loaded:"File loaded", log_no_style:"Select at least one hook style.",
+    log_audio:"Audio extraction (FFmpeg)...", log_audio_ok:"Audio track extracted.",
+    log_detect:"Librosa analysis — potential drops...", log_detect_ok:"drops found.",
+    log_cut:"Cutting clips 9:16 (FFmpeg)...", log_cut_ok:"clips cut.",
+    log_hooks:"Generating hooks (Claude API)...", log_hooks_ok:"hooks generated",
+    log_export:"Organising output files...", log_done:"Reels ready to upload.",
+    step_detail_audio:"Audio extracted", step_detail_drops:"drops detected",
+    step_detail_clips:"clips created", step_detail_hooks:"hooks generated", step_detail_export:"Export complete",
+    btn_finished:"✓ DONE — RELAUNCH",
+    log_hashtags_ok:"hashtags generated for", log_hashtags_err:"Error generating hashtags.",
+    btn_regen_tags:"REGENERATE HASHTAGS", hashtag_loading:"Generating hashtags...",
+  }
+};
+
+let uiLang = 'FR';
+let hookLang = 'FR';
+
+function setUILang(lang, el) {
+  uiLang = lang;
+  document.querySelectorAll('.ui-lang-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  applyTranslations();
+}
+
+function applyTranslations() {
+  const t = i18n[uiLang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const key = el.getAttribute('data-i18n-ph');
+    if (t[key] !== undefined) el.placeholder = t[key];
+  });
+  // Bouton mystère
+  const btnMyst = document.querySelector('[data-style="mystere"]');
+  if (btnMyst && t['btn_mystere']) btnMyst.textContent = t['btn_mystere'];
+  // Bouton lancer si pas en cours
+  const btnGen = document.getElementById('generateBtn');
+  if (btnGen && !isRunning) btnGen.textContent = t['btn_launch'];
+  // Empty state
+  const empty = document.querySelector('.empty-state span[data-i18n="empty_results"]');
+  if (empty) empty.textContent = t['empty_results'];
+}
+
+// ═══════════════════════════════════════════
+// HOOK LANG
+// ═══════════════════════════════════════════
+function setHookLang(lang, el) {
+  hookLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// DRAG & DROP
+// ═══════════════════════════════════════════
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+function handleFile(file) {
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileMeta').textContent = `${(file.size/1024/1024).toFixed(1)} Mo · ${file.type||'video'}`;
+  document.getElementById('fileSelected').classList.add('show');
+  addLog(`${i18n[uiLang].log_file_loaded} : ${file.name}`, 'ok');
+}
+
+document.querySelectorAll('.style-btn').forEach(btn => btn.addEventListener('click', () => btn.classList.toggle('active')));
+function updateThreshold(v) { document.getElementById('thresholdVal').textContent = v+'/10'; }
+
+// ═══════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════
+function addLog(msg, type='') {
+  const lb = document.getElementById('logBody');
+  const now = new Date();
+  const t = [now.getHours(),now.getMinutes(),now.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
+  const line = document.createElement('div');
+  line.className='log-line';
+  line.innerHTML=`<span class="log-time">${t}</span><span class="log-msg ${type}">${msg}</span>`;
+  lb.appendChild(line); lb.scrollTop=lb.scrollHeight;
+}
+
+// ═══════════════════════════════════════════
+// HASHTAGS
+// ═══════════════════════════════════════════
+async function generateHashtags() {
+  const t = i18n[uiLang];
+  const artist = document.getElementById('artistName').value.trim() || 'artist';
+  const style  = document.getElementById('musicStyle').value;
+  const desc   = document.getElementById('artistDesc').value.trim();
+  const btn    = document.getElementById('btnGenTags');
+  const out    = document.getElementById('hashtagOutput');
+
+  btn.style.opacity='0.5'; btn.style.cursor='wait';
+  out.innerHTML=`<span style="color:var(--muted)">${t.hashtag_loading}</span>`;
+
+  try {
+    const prompt = `You are an expert in Instagram and TikTok marketing for electronic music.
+Artist: ${artist} | Style: ${style} | Bio: ${desc||'Electronic music artist'}
+Generate exactly 20 optimised hashtags to maximise reach on Instagram and TikTok.
+Mix: popular generic tags, style niche tags, community tags, artist name.
+Language: ${hookLang === 'FR' ? 'French' : 'English'}.
+Reply ONLY with the hashtags separated by spaces. No other text.`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:300, messages:[{role:"user",content:prompt}] })
+    });
+    const data = await response.json();
+    const tags = data.content[0].text.trim().split(/\s+/).filter(t=>t.startsWith('#'));
+    out.innerHTML = tags.map(tag=>`<span class="tag">${tag}</span>`).join('');
+    addLog(`${tags.length} ${t.log_hashtags_ok} ${artist}.`, 'ok');
+  } catch(e) {
+    out.innerHTML=`<span style="color:var(--muted)">${t.hashtag_placeholder}</span>`;
+    addLog(t.log_hashtags_err, 'err');
+  }
+  btn.style.opacity=''; btn.style.cursor='';
+  btn.querySelector('[data-i18n="btn_gen_tags"]').textContent = t.btn_regen_tags;
+}
+
+// ═══════════════════════════════════════════
+// PIPELINE
+// ═══════════════════════════════════════════
+let isRunning = false;
+
+function startGeneration() {
+  if(isRunning) return;
+  const tr = i18n[uiLang];
+  const artistName = document.getElementById('artistName').value.trim() || 'Artist';
+  const activeStyles = [...document.querySelectorAll('.style-btn.active')].map(b=>b.dataset.style);
+  if(!activeStyles.length) { addLog(tr.log_no_style, 'err'); return; }
+
+  isRunning = true;
+  const btn = document.getElementById('generateBtn');
+  btn.disabled=true; btn.textContent='⏳ ...'; btn.classList.add('processing');
+  document.getElementById('resultsList').innerHTML='';
+  ['statDrops','statReels','statHooks'].forEach(id=>document.getElementById(id).textContent='0');
+  [1,2,3,4,5].forEach(i=>document.getElementById('step'+i).classList.remove('active','done'));
+  setProgress(0);
+  runPipeline(generateMockDrops(), artistName, activeStyles);
+  // Remplace l'appel mock par le vrai upload + pipeline
+  runPipeline(window._uploadedFilename || '', artistName, activeStyles);
+}
+
+function secToTime(s) {
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  return h>0?`${h}h${String(m).padStart(2,'0')}m${String(sec).padStart(2,'0')}s`:`${String(m).padStart(2,'0')}m${String(sec).padStart(2,'0')}s`;
+}
+
+// Upload réel du fichier vers le serveur
+async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append('video', file);
+  addLog('Upload du fichier en cours...', 'warn');
+  try {
+    const res = await fetch('/upload', { method:'POST', body: formData });
+    const data = await res.json();
+    if(data.error) { addLog('Erreur upload : '+data.error, 'err'); return null; }
+    addLog(`Fichier uploadé : ${data.filename} (${data.size_mb} Mo)`, 'ok');
+    return data.filename;
+  } catch(e) {
+    addLog('Erreur upload — serveur inaccessible.', 'err');
+    return null;
+  }
+}
+
+// Surcharge handleFile pour stocker le fichier et l'uploader
+const _origHandleFile = handleFile;
+function handleFile(file) {
+  _origHandleFile(file);
+  window._pendingFile = file;
+  window._uploadedFilename = null;
+}
+
+async function runPipeline(ignored, artistName, styles) {
+  const tr = i18n[uiLang];
+  const delay = ms=>new Promise(r=>setTimeout(r,ms));
+
+  // Upload d'abord
+  if(window._pendingFile) {
+    const fname = await uploadFile(window._pendingFile);
+    if(!fname) { resetBtn(); return; }
+    window._uploadedFilename = fname;
+    window._pendingFile = null;
+  }
+
+  if(!window._uploadedFilename) {
+    addLog('Aucun fichier uploadé.', 'err'); resetBtn(); return;
+  }
+
+  // Lancer le job
+  activateStep(1); setProgress(10);
+  let jobId;
+  try {
+    const res = await fetch('/generate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        filename: window._uploadedFilename,
+        artist_name: artistName,
+        music_style: document.getElementById('musicStyle').value,
+        artist_desc: document.getElementById('artistDesc').value,
+        hook_styles: styles,
+        hook_lang: hookLang,
+        threshold: document.getElementById('threshold').value,
+        sec_before: document.getElementById('secBefore').value,
+        sec_after: document.getElementById('secAfter').value,
+        hashtags: [...document.querySelectorAll('.tag')].map(t=>t.textContent).join(', ') || '#techno'
+      })
+    });
+    const data = await res.json();
+    if(data.error) { addLog('Erreur : '+data.error,'err'); resetBtn(); return; }
+    jobId = data.job_id;
+  } catch(e) { addLog('Erreur connexion serveur.','err'); resetBtn(); return; }
+
+  // Polling
+  let lastLogCount = 0;
+  let done = false;
+  const stepLabels = {1:tr.step_detail_audio,2:tr.step_detail_drops,3:tr.step_detail_clips,4:tr.step_detail_hooks,5:tr.step_detail_export};
+
+  while(!done) {
+    await delay(2500);
+    try {
+      const res = await fetch('/status/'+jobId);
+      const job = await res.json();
+
+      // Nouveaux logs
+      job.logs.slice(lastLogCount).forEach(l=>addLog(l.msg, l.level==='ok'?'ok':l.level==='err'?'err':'warn'));
+      lastLogCount = job.logs.length;
+
+      // Étapes
+      Object.entries(job.steps||{}).forEach(([n,s])=>{
+        if(s==='running') activateStep(parseInt(n));
+        if(s==='done') { doneStep(parseInt(n), stepLabels[n]||'✓'); }
+      });
+
+      // Stats
+      if(job.stats) {
+        document.getElementById('statDrops').textContent=job.stats.drops||0;
+        document.getElementById('statReels').textContent=job.stats.reels||0;
+        document.getElementById('statHooks').textContent=job.stats.hooks||0;
+      }
+
+      // Progression
+      const doneCount = Object.values(job.steps||{}).filter(s=>s==='done').length;
+      setProgress(Math.min(95, doneCount*20));
+
+      // Afficher reels
+      if(job.reels && job.reels.length>0) {
+        const rl = document.getElementById('resultsList');
+        rl.innerHTML='';
+        const dlAll=document.createElement('button');
+        dlAll.className='btn-download-all';
+        dlAll.textContent=tr.btn_download_all;
+        dlAll.onclick=()=>{ window.open('/download-zip/'+artistName.replace(/[^a-zA-Z0-9_-]/g,'_')); };
+        rl.appendChild(dlAll);
+        job.reels.forEach(reel=>{
+          const item=document.createElement('div');
+          item.className='result-item';
+          const hookLines=(reel.hooks||[]).map(h=>`<div class="hook-item"><span class="hook-style">${h.style}</span>${h.text}</div>`).join('');
+          item.innerHTML=`
+            <div class="result-drop">DROP #${String(reel.index).padStart(2,'0')} — ${artistName.toUpperCase()}</div>
+            <div class="result-timecode">${reel.timecode_start} → ${reel.timecode_drop} · ${reel.duration}s</div>
+            <div class="hook-list">${hookLines}</div>
+            <a class="btn-download" href="${reel.download_url}" target="_blank">${tr.btn_download}</a>
+          `;
+          rl.appendChild(item);
+        });
+      }
+
+      if(job.status==='done'||job.status==='error') done=true;
+    } catch(e){ addLog('Polling...','warn'); }
+  }
+
+  setProgress(100);
+  resetBtn();
+}
+
+function resetBtn() {
+  const btn=document.getElementById('generateBtn');
+  btn.disabled=false; btn.textContent=i18n[uiLang].btn_finished; btn.classList.remove('processing');
+  isRunning=false;
+}
+
+function activateStep(n) {
+  document.getElementById('step'+n).classList.add('active');
+  document.getElementById('step'+n+'d').textContent=i18n[uiLang].waiting+' ...';
+}
+function doneStep(n,msg) {
+  const el=document.getElementById('step'+n);
+  el.classList.remove('active'); el.classList.add('done');
+  el.querySelector('.step-num').textContent='✓';
+  document.getElementById('step'+n+'d').textContent=msg;
+}
+function setProgress(pct) { document.getElementById('progressBar').style.width=pct+'%'; }
+</script>
+</body>
+</html>

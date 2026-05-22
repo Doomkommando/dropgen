@@ -244,7 +244,7 @@ def run_pipeline(job_id, video_path, artist_name, music_style, artist_desc,
         log(job_id, f"Erreur : {e}", "err")
 
 
-def extract_audio(video_path):
+def extract_audio(video_path, job_id):
     out = TEMP_DIR / (video_path.stem + "_audio.wav")
     subprocess.run([
         "ffmpeg", "-y", "-i", str(video_path),

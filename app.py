@@ -67,7 +67,7 @@ def hashtags():
         f"Reply ONLY with hashtags separated by spaces. No other text."
     )
     response = client.messages.create(
-        model="claude-sonnet-4-20250514", max_tokens=300,
+        model="claude-sonnet-4-5", max_tokens=300,
         messages=[{"role": "user", "content": prompt}]
     )
     tags = [t for t in response.content[0].text.strip().split() if t.startswith("#")]
@@ -382,7 +382,7 @@ STYLES : {styles_req}
 RÈGLES : max 12 mots, français ou anglais, ajoute {hashtags}
 Réponds UNIQUEMENT en JSON : {{"hooks": [{{"style": "...", "text": "..."}}]}}"""
     response = client.messages.create(
-        model="claude-sonnet-4-20250514", max_tokens=500,
+        model="claude-sonnet-4-5", max_tokens=500,
         messages=[{"role": "user", "content": prompt}]
     )
     raw = response.content[0].text.strip().replace("```json", "").replace("```", "").strip()

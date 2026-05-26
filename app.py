@@ -81,11 +81,7 @@ def upload_video():
     if "video" not in request.files:
         return jsonify({"error": "Aucun fichier reçu"}), 400
     file = request.files["video"]
-    import re
-    safe_name = file.filename
-    safe_name = safe_name.replace('Ø', 'O').replace('ø', 'o')
-    safe_name = re.sub(r'[^\w\s._-]', '', safe_name)
-    safe_name = re.sub(r'\s+', '_', safe_name).strip('_') or "video.mp4"
+    safe_name = "".join(c for c in file.filename if c.isalnum() or c in "._- ")
     path = INPUT_DIR / safe_name
     file.save(str(path))
     return jsonify({
@@ -104,6 +100,7 @@ def generate():
     artist_desc = data.get("artist_desc", "")
     hook_styles = data.get("hook_styles", ["hype", "mystere", "minimal"])
     threshold   = float(data.get("threshold", 6)) / 10.0
+    hook_lang   = data.get("hook_lang", "EN")
     sec_before  = int(data.get("sec_before", 5))
     sec_after   = int(data.get("sec_after", 20))
     hashtags    = data.get("hashtags", "#techno")
@@ -125,7 +122,7 @@ def generate():
     thread = threading.Thread(
         target=run_pipeline,
         args=(job_id, video_path, artist_name, music_style, artist_desc,
-              hook_styles, threshold, sec_before, sec_after, hashtags),
+              hook_styles, threshold, sec_before, sec_after, hashtags, hook_lang),
         daemon=True
     )
     thread.start()
@@ -137,17 +134,6 @@ def status(job_id):
     if job_id not in jobs:
         return jsonify({"error": "Job inconnu"}), 404
     return jsonify(jobs[job_id])
-
-@app.route("/debug/<job_id>")
-def debug(job_id):
-    if job_id not in jobs:
-        return jsonify({"error": "Job inconnu"}), 404
-    job = jobs[job_id]
-    return jsonify({
-        "status": job["status"],
-        "steps": job["steps"],
-        "logs": job["logs"]
-    })
 
 
 @app.route("/download/<path:filepath>")
@@ -187,7 +173,7 @@ def log(job_id, msg, level="info"):
 
 
 def run_pipeline(job_id, video_path, artist_name, music_style, artist_desc,
-                 hook_styles, threshold, sec_before, sec_after, hashtags):
+                 hook_styles, threshold, sec_before, sec_after, hashtags, hook_lang="EN"):
     job = jobs[job_id]
     try:
         job["steps"]["1"] = "running"
@@ -223,7 +209,7 @@ def run_pipeline(job_id, video_path, artist_name, music_style, artist_desc,
         for clip in clip_paths:
             log(job_id, f"Hooks drop #{clip['index']}...")
             hooks = generate_hooks(artist_name, music_style, artist_desc,
-                                   hook_styles, clip["timecode_drop"], hashtags)
+                                   hook_styles, clip["timecode_drop"], hashtags, hook_lang)
             primary_hook = hooks[0]["text"] if hooks else ""
             final_path = artist_dir / f"drop_{clip['index']:02d}_final.mp4"
             burn_text(clip["path"], primary_hook, final_path)
@@ -259,16 +245,12 @@ def run_pipeline(job_id, video_path, artist_name, music_style, artist_desc,
         log(job_id, f"Erreur : {e}", "err")
 
 
-def extract_audio(video_path, job_id):
+def extract_audio(video_path):
     out = TEMP_DIR / (video_path.stem + "_audio.wav")
-    result = subprocess.run([
+    subprocess.run([
         "ffmpeg", "-y", "-i", str(video_path),
         "-vn", "-ac", "1", "-ar", "22050", "-f", "wav", str(out)
-    ], capture_output=True, text=True)
-    if result.returncode != 0:
-        log(job_id, f'FFmpeg erreur: {result.stderr[-200:]}', 'err')
-        raise Exception('FFmpeg failed')
-    log(job_id, f'Audio extrait : {out.name}', 'ok')
+    ], check=True, capture_output=True)
     return out
 
 
@@ -338,31 +320,43 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
 
 
 def cut_clip(video_path, start_sec, duration, out_path):
+    # Seek rapide avant -i pour eviter fond noir, recadrage 9:16 centre
     result = subprocess.run([
         "ffmpeg", "-y",
+        "-ss", str(max(0, start_sec - 0.5)),  # seek leger avant pour eviter fond noir
         "-i", str(video_path),
-        "-ss", str(start_sec),
+        "-ss", "0.5",                           # skip les 0.5s de buffer
         "-t", str(duration),
-        "-c:v", "copy",
-        "-c:a", "copy",
+        "-vf", "crop=ih*9/16:ih,scale=1080:1920:flags=lanczos",
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-c:a", "aac", "-b:a", "192k",
+        "-movflags", "+faststart",
         str(out_path)
     ], capture_output=True, text=True)
     if result.returncode != 0:
-        raise Exception(f"FFmpeg cut error: {result.stderr[-300:]}")
+        raise Exception(f"FFmpeg cut error: {result.stderr[-400:]}")
 
 
 def burn_text(video_path, text, out_path):
-    safe_text = text.replace("'", "\\'").replace(":", "\\:")
-    vf = (f"drawtext=text='{safe_text}':fontcolor=white:fontsize=48:"
-          "borderw=3:bordercolor=black:x=(w-text_w)/2:y=h*0.12:enable='between(t,0,5)'")
-    subprocess.run([
+    safe_text = text.replace("'", "").replace(":", " ").replace('"', '').replace("\\", "")
+    vf = (
+        f"drawtext=text='{safe_text}':"
+        "fontcolor=white:fontsize=28:borderw=2:bordercolor=black:"
+        "x=(w-text_w)/2:y=h*0.82:"
+        "box=1:boxcolor=black@0.45:boxborderw=8"
+    )
+    result = subprocess.run([
         "ffmpeg", "-y", "-i", str(video_path), "-vf", vf,
-        "-c:v", "libx264", "-preset", "fast", "-crf", "22",
-        "-c:a", "copy", str(out_path)
-    ], check=True, capture_output=True)
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-c:a", "copy",
+        "-movflags", "+faststart",
+        str(out_path)
+    ], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise Exception(f"FFmpeg burn error: {result.stderr[-400:]}")
 
 
-def generate_hooks(artist_name, music_style, artist_desc, hook_styles, drop_timecode, hashtags):
+def generate_hooks(artist_name, music_style, artist_desc, hook_styles, drop_timecode, hashtags, hook_lang="EN"):
     if not ANTHROPIC_API_KEY:
         return [{"style": s, "text": f"[Hook {s} — clé API manquante]"} for s in hook_styles]
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -375,12 +369,13 @@ def generate_hooks(artist_name, music_style, artist_desc, hook_styles, drop_time
         "provoc": "Provocation décalée"
     }
     styles_req = "\n".join([f"- {s}: {style_descriptions.get(s, s)}" for s in hook_styles])
-    prompt = f"""Tu es expert en marketing pour artistes de musique électronique.
-ARTISTE : {artist_name} | STYLE : {music_style} | BIO : {artist_desc or "Artiste techno"}
-Génère {len(hook_styles)} hooks pour un Reel Instagram/TikTok (25 sec).
-STYLES : {styles_req}
-RÈGLES : max 12 mots, français ou anglais, ajoute {hashtags}
-Réponds UNIQUEMENT en JSON : {{"hooks": [{{"style": "...", "text": "..."}}]}}"""
+    language = "French" if hook_lang == "FR" else "English"
+    prompt = f"""You are an expert in social media marketing for electronic music artists.
+ARTIST: {artist_name} | STYLE: {music_style} | BIO: {artist_desc or "Techno artist"}
+Generate {len(hook_styles)} hooks for an Instagram/TikTok Reel (25 sec).
+STYLES: {styles_req}
+RULES: max 12 words, language: {language}, add {hashtags}
+Reply ONLY in JSON: {{"hooks": [{{"style": "...", "text": "..."}}]}}"""
     response = client.messages.create(
         model="claude-sonnet-4-5", max_tokens=500,
         messages=[{"role": "user", "content": prompt}]

@@ -338,13 +338,15 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
 
 
 def cut_clip(video_path, start_sec, duration, out_path):
-    subprocess.run([
+    result = subprocess.run([
         "ffmpeg", "-y", "-ss", str(start_sec), "-i", str(video_path),
         "-t", str(duration),
         "-vf", "crop=ih*9/16:ih,scale=1080:1920",
         "-c:v", "libx264", "-preset", "fast", "-crf", "22",
         "-c:a", "aac", "-b:a", "192k", str(out_path)
-    ], check=True, capture_output=True)
+    ], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise Exception(f"FFmpeg cut error: {result.stderr[-300:]}")
 
 
 def burn_text(video_path, text, out_path):

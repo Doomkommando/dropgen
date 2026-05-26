@@ -247,14 +247,14 @@ def run_pipeline(job_id, video_path, artist_name, music_style, artist_desc,
 def extract_audio(video_path, job_id):
     out = TEMP_DIR / (video_path.stem + "_audio.wav")
     result = subprocess.run([
-    "ffmpeg", "-y", "-i", str(video_path),
-    "-vn", "-ac", "1", "-ar", "22050", "-f", "wav", str(out)
-], capture_output=True, text=True)
-if result.returncode != 0:
-    log(job_id, f'FFmpeg erreur: {result.stderr[-200:]}', 'err')
-    raise Exception('FFmpeg failed')
-log(job_id, f'Audio extrait : {out.name}', 'ok')
-return out
+        "ffmpeg", "-y", "-i", str(video_path),
+        "-vn", "-ac", "1", "-ar", "22050", "-f", "wav", str(out)
+    ], capture_output=True, text=True)
+    if result.returncode != 0:
+        log(job_id, f'FFmpeg erreur: {result.stderr[-200:]}', 'err')
+        raise Exception('FFmpeg failed')
+    log(job_id, f'Audio extrait : {out.name}', 'ok')
+    return out
 
 
 def detect_drops(audio_path, sensitivity=0.6, job_id=None):

@@ -341,7 +341,7 @@ def cut_clip(video_path, start_sec, duration, out_path):
     result = subprocess.run([
         "ffmpeg", "-y", "-ss", str(start_sec), "-i", str(video_path),
         "-t", str(duration),
-        "-vf", "crop=ih*9/16:ih,scale=1080:1920",
+        "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
         "-c:v", "libx264", "-preset", "fast", "-crf", "22",
         "-c:a", "aac", "-b:a", "192k", str(out_path)
     ], capture_output=True, text=True)

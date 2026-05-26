@@ -82,7 +82,11 @@ def upload_video():
         return jsonify({"error": "Aucun fichier reçu"}), 400
     file = request.files["video"]
     import unicodedata
-    normalized = unicodedata.normalize('NFKD', file.filename)
+    import re
+    safe_name = file.filename
+    safe_name = safe_name.replace('Ø', 'O').replace('ø', 'o')
+    safe_name = re.sub(r'[^\w\s._-]', '', safe_name)
+    safe_name = re.sub(r'\s+', '_', safe_name).strip('_') or "video.mp4"
     safe_name = "".join(c for c in normalized if c.isascii() and (c.isalnum() or c in "._- "))
     safe_name = safe_name.strip() or "video.mp4"
     path = INPUT_DIR / safe_name

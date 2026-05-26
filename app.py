@@ -81,7 +81,10 @@ def upload_video():
     if "video" not in request.files:
         return jsonify({"error": "Aucun fichier reçu"}), 400
     file = request.files["video"]
-    safe_name = "".join(c for c in file.filename if c.isalnum() or c in "._- ")
+    import unicodedata
+    normalized = unicodedata.normalize('NFKD', file.filename)
+    safe_name = "".join(c for c in normalized if c.isascii() and (c.isalnum() or c in "._- "))
+    safe_name = safe_name.strip() or "video.mp4"
     path = INPUT_DIR / safe_name
     file.save(str(path))
     return jsonify({

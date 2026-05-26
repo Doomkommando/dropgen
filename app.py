@@ -134,6 +134,17 @@ def status(job_id):
         return jsonify({"error": "Job inconnu"}), 404
     return jsonify(jobs[job_id])
 
+@app.route("/debug/<job_id>")
+def debug(job_id):
+    if job_id not in jobs:
+        return jsonify({"error": "Job inconnu"}), 404
+    job = jobs[job_id]
+    return jsonify({
+        "status": job["status"],
+        "steps": job["steps"],
+        "logs": job["logs"]
+    })
+
 
 @app.route("/download/<path:filepath>")
 def download(filepath):

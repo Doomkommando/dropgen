@@ -6,3 +6,4 @@ cmds = ["python3 -m venv --copies /opt/venv && . /opt/venv/bin/activate && pip i
 
 [start]
 cmd = "python3 app.py"
+

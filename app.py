@@ -277,18 +277,32 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
 
 
 def cut_clip(video_path, start_sec, duration, out_path):
+    # Etape 1 : découpe sans filtre
+    tmp_path = out_path.with_suffix('.tmp.mp4')
     result = subprocess.run([
         "ffmpeg", "-y",
         "-i", str(video_path),
         "-ss", str(start_sec),
         "-t", str(duration),
-        "-vf", "pad=iw:iw*16/9:0:(oh-ih)/2,scale=1080:1920",
+        "-c:v", "copy",
+        "-c:a", "copy",
+        str(tmp_path)
+    ], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise Exception(f"FFmpeg copy error: {result.stderr[-400:]}")
+
+    # Etape 2 : recadrage 9:16 sur le clip court
+    result2 = subprocess.run([
+        "ffmpeg", "-y",
+        "-i", str(tmp_path),
+        "-vf", "crop=ih*9/16:ih,scale=1080:1920",
         "-c:v", "libx264", "-preset", "fast", "-crf", "18",
         "-c:a", "aac", "-b:a", "192k",
         str(out_path)
     ], capture_output=True, text=True)
-    if result.returncode != 0:
-        raise Exception(f"FFmpeg cut error: {result.stderr[-400:]}")
+    tmp_path.unlink(missing_ok=True)
+    if result2.returncode != 0:
+        raise Exception(f"FFmpeg crop error: {result2.stderr[-400:]}")
 
 
 def sanitize_name(name):

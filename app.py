@@ -279,12 +279,13 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
 def cut_clip(video_path, start_sec, duration, out_path):
     result = subprocess.run([
         "ffmpeg", "-y",
-        "-ss", str(max(0, start_sec - 0.5)),
         "-i", str(video_path),
-        "-ss", "0.5",
+        "-ss", str(start_sec),
         "-t", str(duration),
-        "-c:v", "copy",
-        "-c:a", "copy",
+        "-vf", "crop=ih*9/16:ih,scale=1080:1920:flags=lanczos",
+        "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+        "-c:a", "aac", "-b:a", "192k",
+        "-avoid_negative_ts", "make_zero",
         str(out_path)
     ], capture_output=True, text=True)
     if result.returncode != 0:

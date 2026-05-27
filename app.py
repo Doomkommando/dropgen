@@ -111,11 +111,13 @@ def run_pipeline(job_id, video_path, artist, threshold, sec_before, sec_after):
             out   = artist_dir / f"drop_{i+1:02d}.mp4"
             log(job_id,f"Clip {i+1}/{len(drops)} — {sec_to_str(start)}...","warn")
             r = subprocess.run([
-                "ffmpeg","-y","-i",str(video_path),
-                "-ss",str(start),"-t",str(dur),
-                "-c","copy",str(out)
+                "ffmpeg","-y",
+                "-ss",str(start),
+                "-i",str(video_path),
+                "-t",str(dur),
+                "-c","copy",
                 "-avoid_negative_ts","make_zero",
-                "-async","1",
+                str(out)
             ], capture_output=True, text=True)
             if r.returncode != 0:
                 raise Exception(f"FFmpeg: {r.stderr[-200:]}")

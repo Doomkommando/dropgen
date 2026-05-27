@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DROP.GEN — by Tunevolt</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&family=Familjen+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080808; --surface:#111; --surface2:#181818;
+  --border:#1e1e1e; --border2:#2a2a2a;
+  --red:#e02020; --red2:#ff3a3a; --red-dim:rgba(224,32,32,0.10);
+  --text:#f2f2f2; --muted:#555; --muted2:#888; --success:#2ecc71;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:radial-gradient(ellipse at top left,#1c0404,#080808 55%);color:var(--text);font-family:'Familjen Grotesk',sans-serif;min-height:100vh;}
+.wrap{max-width:900px;margin:0 auto;padding:0 24px;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border);}
+.hl{display:flex;align-items:center;gap:14px;}
+.bolt{width:32px;height:32px;background:var(--red);clip-path:polygon(20% 0%,80% 0%,60% 45%,85% 45%,20% 100%,40% 55%,15% 55%);flex-shrink:0;}
+.bn{font-family:'Archivo',sans-serif;font-weight:900;font-size:16px;}
+.bn .v{color:var(--red);}
+.bsub{font-size:9px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;}
+.hsep{width:1px;height:24px;background:var(--border2);}
+.tn{font-family:'Archivo',sans-serif;font-weight:900;font-size:20px;letter-spacing:4px;}
+.tn em{color:var(--red);font-style:normal;}
+.tsub{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.pill{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted2);border:1px solid var(--border2);padding:5px 12px;border-radius:2px;letter-spacing:1px;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--success);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:1fr 320px;gap:16px;padding:20px 0;}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:2px;}
+.ph{padding:10px 16px;border-bottom:1px solid var(--border);font-family:'Archivo',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);display:flex;align-items:center;gap:8px;}
+.ph::before{content:'';width:3px;height:12px;background:var(--red);border-radius:1px;}
+
+/* DROP ZONE */
+.dz{margin:16px;border:1px dashed var(--border2);border-radius:2px;padding:40px 20px;text-align:center;cursor:pointer;background:#0f0f0f;transition:all 0.2s;}
+.dz:hover,.dz.over{border-color:var(--red);}
+.dz-icon{font-size:32px;opacity:0.4;display:block;margin-bottom:12px;}
+.dz-title{font-family:'Archivo',sans-serif;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.dz-sub{font-size:11px;color:var(--muted2);}
+.fi{display:none;}
+
+/* FILE INFO */
+.finfo{margin:0 16px 14px;background:var(--surface2);border:1px solid var(--border2);padding:10px 14px;display:none;align-items:center;gap:10px;border-radius:2px;}
+.finfo.show{display:flex;}
+.ficon{width:30px;height:30px;background:var(--red-dim);border:1px solid rgba(224,32,32,0.2);display:flex;align-items:center;justify-content:center;border-radius:2px;font-size:13px;}
+.fname{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fmeta{font-size:10px;color:var(--muted2);margin-top:2px;}
+
+/* FORM */
+.form{padding:0 16px 14px;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.grp{display:flex;flex-direction:column;gap:5px;}
+.grp.full{grid-column:1/-1;}
+label{font-family:'Archivo',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);}
+input{background:#0f0f0f;border:1px solid var(--border2);color:var(--text);font-family:'Familjen Grotesk',sans-serif;font-size:13px;padding:8px 11px;border-radius:2px;outline:none;width:100%;transition:border-color 0.15s;}
+input:focus{border-color:var(--red);}
+
+/* THRESHOLD */
+.thr-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.thr-lbl{font-family:'Archivo',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+input[type=range]{flex:1;-webkit-appearance:none;height:2px;background:var(--border2);outline:none;border-radius:1px;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:var(--red);border-radius:50%;cursor:pointer;}
+.thr-val{font-size:11px;color:var(--red);font-family:'Archivo',sans-serif;font-weight:700;min-width:30px;text-align:right;}
+
+/* BTN */
+.btn{width:calc(100% - 32px);margin:0 16px 16px;background:var(--red);color:#fff;border:none;font-family:'Archivo',sans-serif;font-weight:900;font-size:13px;letter-spacing:3px;text-transform:uppercase;padding:14px;cursor:pointer;border-radius:2px;transition:all 0.15s;}
+.btn:hover{background:var(--red2);}
+.btn:disabled{opacity:0.3;cursor:not-allowed;}
+
+/* PIPELINE */
+.steps{padding:12px 16px;}
+.step{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);opacity:0.25;transition:opacity 0.3s;}
+.step:last-child{border-bottom:none;}
+.step.active{opacity:1;}.step.done{opacity:0.6;}
+.snum{width:18px;height:18px;border:1px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted2);font-family:'Archivo',sans-serif;font-weight:700;flex-shrink:0;transition:all 0.3s;}
+.step.active .snum{border-color:var(--red);color:var(--red);}
+.step.done .snum{background:var(--success);border-color:var(--success);color:#000;}
+.slabel{font-size:12px;font-weight:500;}
+.sdetail{font-size:10px;color:var(--muted2);}
+.pbar-wrap{margin:0 16px 12px;height:2px;background:var(--border);border-radius:1px;overflow:hidden;}
+.pbar{height:100%;background:var(--red);width:0%;transition:width 0.4s;}
+
+/* RESULTS */
+.rlist{padding:8px 12px;max-height:320px;overflow-y:auto;}
+.rlist::-webkit-scrollbar{width:2px;}
+.rlist::-webkit-scrollbar-thumb{background:var(--border2);}
+.ritem{background:var(--surface2);border:1px solid var(--border2);border-left:2px solid var(--red);border-radius:2px;padding:10px 12px;margin-bottom:6px;animation:up 0.3s ease;}
+@keyframes up{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.rnum{font-family:'Archivo',sans-serif;font-weight:900;font-size:11px;letter-spacing:2px;color:var(--red2);margin-bottom:3px;}
+.rtc{font-size:10px;color:var(--muted2);margin-bottom:7px;}
+.btn-dl{display:inline-flex;align-items:center;gap:4px;background:var(--red);color:#fff;border:none;font-family:'Archivo',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 11px;cursor:pointer;border-radius:2px;text-decoration:none;transition:background 0.15s;}
+.btn-dl:hover{background:var(--red2);}
+.btn-zip{display:block;width:calc(100% - 24px);margin:0 12px 10px;background:transparent;color:var(--red);border:1px solid var(--red);font-family:'Archivo',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:8px;cursor:pointer;border-radius:2px;transition:all 0.15s;}
+.btn-zip:hover{background:var(--red-dim);}
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:11px;}
+.empty-icon{font-size:24px;opacity:0.3;display:block;margin-bottom:8px;}
+
+/* LOG */
+.log{padding:8px 14px;font-size:10px;color:var(--muted2);height:80px;overflow-y:auto;line-height:1.9;}
+.log::-webkit-scrollbar{width:2px;}
+.ll{display:flex;gap:8px;}
+.lt{color:#2a2a2a;flex-shrink:0;}
+.lm.ok{color:var(--success);}.lm.warn{color:#f0a500;}.lm.err{color:var(--red2);}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:2px;overflow:hidden;margin-bottom:0;}
+.stat{background:var(--surface);padding:12px;text-align:center;}
+.sv{font-family:'Archivo',sans-serif;font-weight:900;font-size:24px;color:var(--red);}
+.sl{font-size:9px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-top:2px;font-family:'Archivo',sans-serif;}
+
+footer{border-top:1px solid var(--border);padding:12px 0;display:flex;align-items:center;justify-content:space-between;}
+.fb{display:flex;align-items:center;gap:7px;}
+.fc{font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hl">
+      <div class="bolt"></div>
+      <div>
+        <div class="bn">TUNE<span class="v">VOLT</span></div>
+        <div class="bsub">Music Agency</div>
+      </div>
+      <div class="hsep"></div>
+      <div>
+        <div class="tn">DROP<em>.</em>GEN</div>
+        <div class="tsub">Drop Detection</div>
+      </div>
+    </div>
+    <div class="pill"><span class="dot"></span>SYSTÈME ACTIF</div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div>
+      <div class="panel">
+        <div class="ph">Source vidéo</div>
+        <div class="dz" id="dz">
+          <span class="dz-icon">📼</span>
+          <div class="dz-title">Déposer le set ici</div>
+          <div class="dz-sub">MP4 · MOV · MKV</div>
+          <input type="file" class="fi" id="fi" accept="video/*">
+        </div>
+        <div class="finfo" id="finfo">
+          <div class="ficon">▶</div>
+          <div style="flex:1;min-width:0">
+            <div class="fname" id="fname">—</div>
+            <div class="fmeta" id="fmeta">—</div>
+          </div>
+        </div>
+        <div class="form">
+          <div class="grp full" style="margin-bottom:10px">
+            <label>Nom de l'artiste</label>
+            <input type="text" id="artist" placeholder="ex: DJ Hypnos">
+          </div>
+          <div class="grp full" style="margin-bottom:10px">
+            <label>Sensibilité détection drops</label>
+            <div class="thr-row">
+              <span class="thr-lbl">Conservateur</span>
+              <input type="range" id="thr" min="1" max="10" value="6" oninput="document.getElementById('thrv').textContent=this.value+'/10'">
+              <span class="thr-val" id="thrv">6/10</span>
+              <span class="thr-lbl">Agressif</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="grp">
+              <label>Secondes avant le drop</label>
+              <input type="number" id="sbefore" value="5" min="1" max="30">
+            </div>
+            <div class="grp">
+              <label>Secondes après le drop</label>
+              <input type="number" id="safter" value="20" min="5" max="60">
+            </div>
+          </div>
+        </div>
+        <button class="btn" id="btn" onclick="start()">▶ LANCER L'ANALYSE</button>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="panel">
+        <div class="ph">Pipeline</div>
+        <div class="steps">
+          <div class="step" id="s1"><div class="snum">1</div><div><div class="slabel">Extraction audio</div><div class="sdetail" id="s1d">En attente</div></div></div>
+          <div class="step" id="s2"><div class="snum">2</div><div><div class="slabel">Détection des drops</div><div class="sdetail" id="s2d">En attente</div></div></div>
+          <div class="step" id="s3"><div class="snum">3</div><div><div class="slabel">Découpage des clips</div><div class="sdetail" id="s3d">En attente</div></div></div>
+          <div class="step" id="s4"><div class="snum">4</div><div><div class="slabel">Export</div><div class="sdetail" id="s4d">En attente</div></div></div>
+        </div>
+        <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">Clips générés</div>
+        <div class="rlist" id="rlist">
+          <div class="empty"><span class="empty-icon">📭</span>Lance une analyse pour voir les résultats</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">Logs</div>
+        <div class="log" id="logbox">
+          <div class="ll"><span class="lt">00:00:00</span><span class="lm">Système initialisé.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="sv" id="ndrops">0</div><div class="sl">Drops détectés</div></div>
+    <div class="stat"><div class="sv" id="nclips">0</div><div class="sl">Clips créés</div></div>
+  </div>
+
+  <footer>
+    <div class="fb">
+      <div class="bolt" style="width:16px;height:16px"></div>
+      <div class="bn" style="font-size:12px">TUNE<span class="v">VOLT</span></div>
+    </div>
+    <div class="fc">DROP.GEN © 2026 — Tunevolt Music</div>
+  </footer>
+</div>
+
+<script>
+let videoFile = null, running = false;
+
+// FILE
+const dz = document.getElementById('dz');
+const fi = document.getElementById('fi');
+dz.addEventListener('click', () => fi.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+fi.addEventListener('change', e => { if(e.target.files[0]) setFile(e.target.files[0]); });
+
+function setFile(f) {
+  videoFile = f;
+  document.getElementById('fname').textContent = f.name;
+  document.getElementById('fmeta').textContent = `${(f.size/1024/1024).toFixed(0)} Mo`;
+  document.getElementById('finfo').classList.add('show');
+  log(`Fichier : ${f.name}`, 'ok');
+  window._uploadedFilename = null;
+  window._pendingFile = f;
+}
+
+function log(msg, type='') {
+  const lb = document.getElementById('logbox');
+  const t = new Date().toTimeString().slice(0,8);
+  const d = document.createElement('div');
+  d.className='ll';
+  d.innerHTML=`<span class="lt">${t}</span><span class="lm ${type}">${msg}</span>`;
+  lb.appendChild(d); lb.scrollTop=lb.scrollHeight;
+}
+
+function setStep(n, state, detail) {
+  const el = document.getElementById('s'+n);
+  el.classList.remove('active','done');
+  el.querySelector('.snum').textContent = n;
+  if(state==='active') el.classList.add('active');
+  if(state==='done') { el.classList.add('done'); el.querySelector('.snum').textContent='✓'; }
+  if(detail !== undefined) document.getElementById('s'+n+'d').textContent = detail;
+}
+
+function setPbar(p) { document.getElementById('pbar').style.width=p+'%'; }
+
+async function start() {
+  if(running) return;
+  if(!window._pendingFile && !window._uploadedFilename) { log('Dépose une vidéo avant de lancer.','err'); return; }
+  running=true;
+  const btn = document.getElementById('btn');
+  btn.disabled=true; btn.textContent='⏳ EN COURS...';
+  document.getElementById('rlist').innerHTML='<div class="empty"><span class="empty-icon">⏳</span>Traitement en cours...</div>';
+  document.getElementById('ndrops').textContent='0';
+  document.getElementById('nclips').textContent='0';
+  [1,2,3,4].forEach(i => setStep(i,'','En attente'));
+  setPbar(0);
+
+  const artist = document.getElementById('artist').value.trim() || 'Artiste';
+
+  // Upload
+  if(window._pendingFile) {
+    log('Upload en cours...','warn');
+    const fd = new FormData();
+    fd.append('video', window._pendingFile);
+    try {
+      const r = await fetch('/upload',{method:'POST',body:fd});
+      const d = await r.json();
+      if(d.error) { log('Erreur upload: '+d.error,'err'); reset(); return; }
+      window._uploadedFilename = d.filename;
+      window._pendingFile = null;
+      log(`Uploadé : ${d.filename} (${d.size_mb} Mo)`,'ok');
+    } catch(e) { log('Serveur inaccessible.','err'); reset(); return; }
+  }
+
+  setStep(1,'active','En cours...');
+  setPbar(10);
+
+  let jobId;
+  try {
+    const r = await fetch('/generate',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        filename: window._uploadedFilename,
+        artist_name: artist,
+        threshold: document.getElementById('thr').value,
+        sec_before: document.getElementById('sbefore').value,
+        sec_after: document.getElementById('safter').value,
+      })
+    });
+    const d = await r.json();
+    if(d.error) { log('Erreur: '+d.error,'err'); reset(); return; }
+    jobId = d.job_id;
+  } catch(e) { log('Erreur connexion.','err'); reset(); return; }
+
+  // Polling
+  let lastLog = 0, done = false;
+  const labels = {1:'Audio extrait',2:'Drops détectés',3:'Clips découpés',4:'Export OK'};
+
+  while(!done) {
+    await new Promise(r => setTimeout(r, 2500));
+    try {
+      const r = await fetch('/status/'+jobId);
+      const job = await r.json();
+
+      job.logs.slice(lastLog).forEach(l => log(l.msg, l.level==='ok'?'ok':l.level==='err'?'err':'warn'));
+      lastLog = job.logs.length;
+
+      Object.entries(job.steps||{}).forEach(([n,s]) => {
+        if(s==='running') setStep(parseInt(n),'active','En cours...');
+        if(s==='done') setStep(parseInt(n),'done',labels[n]||'✓');
+      });
+
+      if(job.stats) {
+        document.getElementById('ndrops').textContent = job.stats.drops||0;
+        document.getElementById('nclips').textContent = job.stats.reels||0;
+      }
+
+      const dc = Object.values(job.steps||{}).filter(s=>s==='done').length;
+      setPbar(Math.min(95, dc*25));
+
+      if(job.reels && job.reels.length > 0) {
+        const rl = document.getElementById('rlist');
+        rl.innerHTML = '';
+        const zip = document.createElement('button');
+        zip.className='btn-zip';
+        zip.textContent=`⬇ TOUT TÉLÉCHARGER (ZIP) — ${job.reels.length} clips`;
+        zip.onclick = () => window.open('/download-zip/'+artist.replace(/[^a-zA-Z0-9_-]/g,'_'));
+        rl.appendChild(zip);
+        job.reels.forEach(reel => {
+          const item = document.createElement('div');
+          item.className='ritem';
+          item.innerHTML=`
+            <div class="rnum">DROP #${String(reel.index).padStart(2,'0')} — ${artist.toUpperCase()}</div>
+            <div class="rtc">${reel.timecode_start} → ${reel.timecode_drop} · ${reel.duration}s</div>
+            <a class="btn-dl" href="${reel.download_url}" target="_blank">⬇ TÉLÉCHARGER</a>
+          `;
+          rl.appendChild(item);
+        });
+      }
+
+      if(job.status==='done'||job.status==='error') done=true;
+    } catch(e) { log('Polling...','warn'); }
+  }
+
+  setPbar(100);
+  btn.disabled=false;
+  btn.textContent='✓ TERMINÉ — RELANCER';
+  running=false;
+}
+
+function reset() {
+  document.getElementById('btn').disabled=false;
+  document.getElementById('btn').textContent='▶ LANCER L\'ANALYSE';
+  running=false;
+}
+</script>
+</body>
+</html>

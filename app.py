@@ -277,17 +277,32 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
 
 
 def cut_clip(video_path, start_sec, duration, out_path):
-    # Etape 1 : obtenir les dimensions exactes de la video
-    probe = subprocess.run([
-        "ffprobe", "-v", "quiet", "-print_format", "json",
-        "-show_streams", "-select_streams", "v:0",
-        str(video_path)
+    # Essai 1 : copie simple sans encodage
+    result = subprocess.run([
+        "ffmpeg", "-y",
+        "-i", str(video_path),
+        "-ss", str(start_sec),
+        "-t", str(duration),
+        "-c", "copy",
+        str(out_path)
     ], capture_output=True, text=True)
     
-    info = json.loads(probe.stdout)
-    stream = info["streams"][0]
-    vw = int(stream["width"])
-    vh = int(stream["height"])
+    if result.returncode == 0:
+        return
+    
+    # Essai 2 : re-encodage sans filtre
+    result2 = subprocess.run([
+        "ffmpeg", "-y",
+        "-i", str(video_path),
+        "-ss", str(start_sec),
+        "-t", str(duration),
+        "-c:v", "libx264", "-crf", "20",
+        "-c:a", "aac",
+        str(out_path)
+    ], capture_output=True, text=True)
+    
+    if result2.returncode == 0:
+        retu
     
     # Calcul manuel du crop 9:16 centre
     if vw/vh > 9/16:

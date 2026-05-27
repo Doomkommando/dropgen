@@ -277,19 +277,46 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
 
 
 def cut_clip(video_path, start_sec, duration, out_path):
+    # Etape 1 : obtenir les dimensions exactes de la video
+    probe = subprocess.run([
+        "ffprobe", "-v", "quiet", "-print_format", "json",
+        "-show_streams", "-select_streams", "v:0",
+        str(video_path)
+    ], capture_output=True, text=True)
+    
+    info = json.loads(probe.stdout)
+    stream = info["streams"][0]
+    vw = int(stream["width"])
+    vh = int(stream["height"])
+    
+    # Calcul manuel du crop 9:16 centre
+    if vw/vh > 9/16:
+        cw = int(vh * 9/16)
+        ch = vh
+    else:
+        cw = vw
+        ch = int(vw * 16/9)
+    
+    # S'assurer que les dimensions sont paires (obligatoire pour h264)
+    cw = cw - (cw % 2)
+    ch = ch - (ch % 2)
+    cx = (vw - cw) // 2
+    cy = (vh - ch) // 2
+    
+    vf = f"crop={cw}:{ch}:{cx}:{cy},scale=1080:1920"
+    
     result = subprocess.run([
         "ffmpeg", "-y",
         "-i", str(video_path),
         "-ss", str(start_sec),
         "-t", str(duration),
-        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920:(ow-iw)/2:(oh-ih)/2",
-        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "128k",
-        "-threads", "1",
+        "-vf", vf,
+        "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+        "-c:a", "aac", "-b:a", "192k",
         str(out_path)
-    ], capture_output=True, text=True, timeout=300)
+    ], capture_output=True, text=True)
     if result.returncode != 0:
-        raise Exception(f"FFmpeg error: {result.stderr[-500:]}")
+        raise Exception(f"FFmpeg error: {result.stderr[-400:]}")
 
     # Etape 2 : recadrage 9:16 sur le clip court
     result2 = subprocess.run([

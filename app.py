@@ -114,6 +114,8 @@ def run_pipeline(job_id, video_path, artist, threshold, sec_before, sec_after):
                 "ffmpeg","-y","-i",str(video_path),
                 "-ss",str(start),"-t",str(dur),
                 "-c","copy",str(out)
+                "-avoid_negative_ts","make_zero",
+                "-async","1",
             ], capture_output=True, text=True)
             if r.returncode != 0:
                 raise Exception(f"FFmpeg: {r.stderr[-200:]}")

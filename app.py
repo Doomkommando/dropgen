@@ -277,61 +277,45 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
 
 
 def cut_clip(video_path, start_sec, duration, out_path):
-    # Essai 1 : copie simple sans encodage
-    result = subprocess.run([
+    import tempfile, os
+    
+    # Etape 1 : découpe rapide sans encodage
+    tmp = out_path.with_suffix('.tmp.mp4')
+    r1 = subprocess.run([
         "ffmpeg", "-y",
         "-i", str(video_path),
         "-ss", str(start_sec),
         "-t", str(duration),
         "-c", "copy",
-        str(out_path)
+        str(tmp)
     ], capture_output=True, text=True)
-    
-    if result.returncode == 0:
-        return
-    
-    # Essai 2 : re-encodage sans filtre
-    result2 = subprocess.run([
-        "ffmpeg", "-y",
-        "-i", str(video_path),
-        "-ss", str(start_sec),
-        "-t", str(duration),
-        "-c:v", "libx264", "-crf", "20",
-        "-c:a", "aac",
-        str(out_path)
+    if r1.returncode != 0:
+        raise Exception(f"Cut error: {r1.stderr[-300:]}")
+
+    # Etape 2 : recadrage 9:16 sur le petit clip (25s seulement)
+    probe = subprocess.run([
+        "ffprobe", "-v", "quiet", "-print_format", "json",
+        "-show_streams", "-select_streams", "v:0", str(tmp)
     ], capture_output=True, text=True)
-    
-    if result2.returncode == 0:
-        retu
-    
-    # Calcul manuel du crop 9:16 centre
-    if vw/vh > 9/16:
-        cw = int(vh * 9/16)
-        ch = vh
-    else:
-        cw = vw
-        ch = int(vw * 16/9)
-    
-    # S'assurer que les dimensions sont paires (obligatoire pour h264)
-    cw = cw - (cw % 2)
-    ch = ch - (ch % 2)
+    info = json.loads(probe.stdout)
+    vw = int(info["streams"][0]["width"])
+    vh = int(info["streams"][0]["height"])
+    cw = (int(vh * 9/16) // 2) * 2
+    ch = (vh // 2) * 2
     cx = (vw - cw) // 2
-    cy = (vh - ch) // 2
-    
-    vf = f"crop={cw}:{ch}:{cx}:{cy},scale=1080:1920"
-    
-    result = subprocess.run([
+    cy = 0
+
+    r2 = subprocess.run([
         "ffmpeg", "-y",
-        "-i", str(video_path),
-        "-ss", str(start_sec),
-        "-t", str(duration),
-        "-vf", vf,
+        "-i", str(tmp),
+        "-vf", f"crop={cw}:{ch}:{cx}:{cy},scale=1080:1920",
         "-c:v", "libx264", "-preset", "fast", "-crf", "20",
         "-c:a", "aac", "-b:a", "192k",
         str(out_path)
     ], capture_output=True, text=True)
-    if result.returncode != 0:
-        raise Exception(f"FFmpeg error: {result.stderr[-400:]}")
+    tmp.unlink(missing_ok=True)
+    if r2.returncode != 0:
+        raise Exception(f"Crop error: {r2.stderr[-300:]}")
 
     # Etape 2 : recadrage 9:16 sur le clip court
     result2 = subprocess.run([

@@ -1,5 +1,5 @@
 """
-DROP.GEN v2 — Backend minimaliste
+DROP.GEN v2.1 — Backend minimaliste
 Import video → Detection drops → Découpage 9:16 → Téléchargement
 """
 

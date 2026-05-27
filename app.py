@@ -282,10 +282,9 @@ def cut_clip(video_path, start_sec, duration, out_path):
         "-i", str(video_path),
         "-ss", str(start_sec),
         "-t", str(duration),
-        "-vf", "crop=ih*9/16:ih,scale=1080:1920:flags=lanczos",
+        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
         "-c:v", "libx264", "-preset", "fast", "-crf", "18",
         "-c:a", "aac", "-b:a", "192k",
-        "-avoid_negative_ts", "make_zero",
         str(out_path)
     ], capture_output=True, text=True)
     if result.returncode != 0:

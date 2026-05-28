@@ -159,7 +159,7 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
     duration = float(json.loads(probe.stdout)["format"]["duration"])
     if job_id: log(job_id,f"Duree : {duration:.0f}s","ok")
 
-    chunk = 5
+    chunk = 3
     energies = []
     t = 0
     while t < duration:
@@ -179,12 +179,47 @@ def detect_drops(audio_path, sensitivity=0.6, job_id=None):
         t += chunk
 
     if not energies: return []
+
     from scipy.signal import find_peaks
     rms_vals = np.array([e[1] for e in energies])
-    mean, std = np.mean(rms_vals), np.std(rms_vals)
-    thresh = mean + std * (1.0 - sensitivity * 0.5)
-    peaks, _ = find_peaks(rms_vals, height=thresh, distance=max(1,int(30/chunk)))
-    drops = sorted([int(energies[p][0]) for p in peaks if 60 <= energies[p][0] <= duration-60])
+
+    # Lissage sur 5 points
+    smoothed = np.convolve(rms_vals, np.ones(5)/5, mode='same')
+
+    # Detecter les breakdowns (creux locaux)
+    # Un drop arrive APRES un breakdown
+    inverted = -smoothed
+    breakdowns, _ = find_peaks(inverted, 
+        prominence=np.std(smoothed)*0.8,
+        distance=max(1, int(20/chunk)))
+
+    drops = []
+    for bd in breakdowns:
+        bd_t = energies[bd][0]
+        if bd_t < 30 or bd_t > duration - 60:
+            continue
+        # Cherche une montee d'energie dans les 30s apres le breakdown
+        search_end = min(bd + int(30/chunk), len(smoothed)-1)
+        segment = smoothed[bd:search_end]
+        if len(segment) < 3:
+            continue
+        # Le drop = pic d'energie apres le breakdown
+        local_peaks, props = find_peaks(segment,
+            prominence=np.std(smoothed)*0.5,
+            distance=2)
+        if len(local_peaks) == 0:
+            continue
+        # Prend le pic le plus proéminent
+        best = local_peaks[np.argmax(props['prominences'])]
+        drop_t = int(energies[bd + best][0])
+        if drop_t < 60 or drop_t > duration - 60:
+            continue
+        # Evite les doublons
+        if drops and drop_t - drops[-1] < 25:
+            continue
+        drops.append(drop_t)
+
+    drops = sorted(drops)
     if job_id: log(job_id,f"{len(drops)} drops detectes.","ok")
     return drops
 

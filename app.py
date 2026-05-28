@@ -19,6 +19,7 @@ for d in [INPUT_DIR, OUTPUT_DIR, TEMP_DIR]:
 PORT = int(os.environ.get("PORT", 5000))
 app  = Flask(__name__, static_folder=".")
 CORS(app)
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 * 1024  # 10 Go
 jobs = {}
 
 @app.route("/")

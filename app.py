@@ -61,7 +61,14 @@ def status(job_id):
 
 @app.route("/download/<path:filepath>")
 def download(filepath):
-    return send_from_directory(str(OUTPUT_DIR), filepath, as_attachment=True)
+    full_path = OUTPUT_DIR / filepath
+    if not full_path.exists():
+        return jsonify({"error": "Fichier introuvable"}), 404
+    return send_file(
+        str(full_path),
+        mimetype="video/mp4",
+        conditional=True
+    )
 
 @app.route("/download-zip/<artist_name>")
 def download_zip(artist_name):
